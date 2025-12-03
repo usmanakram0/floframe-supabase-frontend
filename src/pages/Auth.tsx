@@ -107,7 +107,7 @@ const Auth = () => {
     if (error) {
       toast({
         title: "Login failed",
-        description: error.message,
+        description: "Please enter your email and password for login",
         variant: "destructive",
       });
     } else {
@@ -240,16 +240,15 @@ const Auth = () => {
                   {loading ? "Creating..." : "Create Account"}
                 </Button>
               )}
-
-              <Button
-                onClick={signInWithGoogle}
-                disabled={loading}
-                variant="secondary"
-                className="w-full h-12 text-lg border border-border flex items-center justify-center gap-3">
-                <img src={google} className="w-5 h-5" /> Continue with Google
-              </Button>
             </div>
           </form>
+          <Button
+            onClick={signInWithGoogle}
+            disabled={loading}
+            variant="secondary"
+            className="w-full h-12 text-lg border border-border flex items-center justify-center gap-3">
+            <img src={google} className="w-5 h-5" /> Continue with Google
+          </Button>
         </div>
       </div>
     </div>
