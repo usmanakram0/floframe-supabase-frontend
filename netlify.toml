@@ -5,6 +5,18 @@
     Cross-Origin-Embedder-Policy = "require-corp"
     Cross-Origin-Resource-Policy = "cross-origin"
 
+# Force correct MIME type for JS modules
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Content-Type = "text/javascript"
+
+# If you have WASM files too
+[[headers]]
+  for = "/*.wasm"
+  [headers.values]
+    Content-Type = "application/wasm"
+
 [[headers]]
   for = "/ffmpeg/*"
   [headers.values]
