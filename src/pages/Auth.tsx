@@ -41,49 +41,60 @@ const Auth = () => {
     }
 
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { first_name: firstName, last_name: lastName }, // Save to auth.metadata
-      },
-    });
 
-    if (error) {
-      toast({
-        title: "Signup failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else if (data?.user) {
-      // Also insert into profiles table
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: data.user.id,
-        first_name: firstName,
-        last_name: lastName,
-        usage_count: 0,
-        usage_limit: 5,
-        plan: "free",
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { first_name: firstName, last_name: lastName },
+        },
       });
 
-      if (profileError) {
+      if (error) {
         toast({
-          title: "Profile creation failed",
-          description: profileError.message,
+          title: "Signup failed",
+          description: error.message,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Account created",
-          description: "You can now login",
-        });
-        setActiveTab("login");
-        setPassword("");
-        setConfirmPassword("");
-      }
-    }
+      } else if (data?.user) {
+        const { error: profileError } = await supabase.from("profiles").upsert(
+          {
+            id: data.user.id,
+            first_name: firstName,
+            last_name: lastName,
+            usage_count: 0,
+            usage_limit: 5, // free tier limit
+            plan: "free",
+          },
+          { onConflict: "id" }
+        );
 
-    setLoading(false);
+        if (profileError) {
+          toast({
+            title: "Profile creation failed",
+            description: profileError.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Account created",
+            description: "You can now login",
+          });
+          setActiveTab("login");
+          setPassword("");
+          setConfirmPassword("");
+        }
+      }
+    } catch (err: any) {
+      toast({
+        title: "Signup error",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signIn = async () => {

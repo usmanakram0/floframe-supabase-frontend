@@ -119,18 +119,51 @@ const Upload = () => {
   };
 
   const extractFrame = async () => {
-    if (!videoFile || !profile || !user) return;
+    if (isProcessing || !videoFile || !profile || !user) return;
 
-    if (profile.usage_count >= profile.usage_limit) {
+    const now = Date.now();
+    let usageCount = profile.usage_count;
+
+    if (profile.last_extraction) {
+      const lastExtractionMs = new Date(profile.last_extraction).getTime();
+
+      const diffMs = now - lastExtractionMs;
+      const diffMinutes = diffMs / (1000 * 60);
+
+      const RESET_AFTER_MINUTES = 1440;
+
+      if (diffMinutes >= RESET_AFTER_MINUTES) {
+        usageCount = 0;
+
+        const { data } = await supabase
+          .from("profiles")
+          .update({ usage_count: 0 })
+          .eq("id", user.id)
+          .select()
+          .single();
+
+        if (data) {
+          setProfile(data);
+        }
+      }
+    }
+
+    const lastExtractionDate = new Date(profile.last_extraction);
+    const nextResetDate = new Date(
+      lastExtractionDate.getTime() + 24 * 60 * 60 * 1000
+    );
+
+    const nextResetTimeLocal = nextResetDate.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    // 2025-12-03 13:23:56.697+00
+    if (usageCount >= profile.usage_limit) {
       toast({
         title: "Limit Reached",
-        description: `You have used all free extractions for today. Come again tomorrow at ${new Date(
-          profile.last_extraction.replace(" ", "T") + "Z"
-        ).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        })}.`,
+        description: `You have used all free extractions for today. Come again tomorrow at ${nextResetTimeLocal}.`,
         variant: "destructive",
       });
       return;
@@ -143,13 +176,8 @@ const Upload = () => {
       formData.append("video", videoFile);
 
       const response = await fetch(
-        // "https://floframe-be.vercel.app/api/extract-last-frame",
-        // "https://13.222.13.17/api/extract-last-frame",
-        "http://13.222.13.17:4000/api/extract-last-frame",
-        {
-          method: "POST",
-          body: formData,
-        }
+        "https://floframe-be.vercel.app/api/extract-last-frame",
+        { method: "POST", body: formData }
       );
 
       if (!response.ok) throw new Error("Extraction failed");
@@ -158,24 +186,22 @@ const Upload = () => {
       const url = URL.createObjectURL(blob);
       setExtractedFrame(url);
 
-      // ✅ Update usage_count and last_extraction in Supabase
       const { data, error } = await supabase
         .from("profiles")
         .update({
-          usage_count: profile.usage_count + 1,
+          usage_count: usageCount + 1,
           last_extraction: new Date().toISOString(),
         })
         .eq("id", user.id)
-        .select(); // fetch updated row
+        .select()
+        .single();
 
-      if (!error && data?.[0]) {
-        // Update profile state immediately
-        setProfile(data[0]);
+      if (!error && data) {
+        setProfile(data);
+
         toast({
           title: "Frame extracted",
-          description: `Remaining: ${
-            data[0].usage_limit - data[0].usage_count
-          }`,
+          description: `Remaining: ${data.usage_limit - data.usage_count}`,
         });
       }
     } catch (error: any) {
@@ -254,6 +280,33 @@ const Upload = () => {
   useEffect(() => {
     if (videoFile && uploadProgress === 100 && !extractedFrame) extractFrame();
   }, [uploadProgress, videoFile]);
+
+  useEffect(() => {
+    if (!profile || !user) return;
+
+    const checkAndResetLimit = async () => {
+      const now = Date.now();
+      const lastExtractionMs = new Date(profile.last_extraction).getTime();
+      const diffMinutes = (now - lastExtractionMs) / (1000 * 60);
+
+      const RESET_AFTER_MINUTES = 1440;
+
+      if (diffMinutes >= RESET_AFTER_MINUTES && profile.usage_count > 0) {
+        const { data } = await supabase
+          .from("profiles")
+          .update({ usage_count: 0 })
+          .eq("id", user.id)
+          .select()
+          .single();
+
+        if (data) {
+          setProfile(data);
+        }
+      }
+    };
+
+    checkAndResetLimit();
+  }, [profile?.last_extraction]);
 
   return (
     <div className={darkMode ? "dark" : ""}>
@@ -402,3 +455,74 @@ const Upload = () => {
 };
 
 export default Upload;
+
+// const extractFrame = async () => {
+//   if (!videoFile || !profile || !user) return;
+
+//   if (profile.usage_count >= profile.usage_limit) {
+//     toast({
+//       title: "Limit Reached",
+//       description: `You have used all free extractions for today. Come again tomorrow at ${new Date(
+//         profile.last_extraction.replace(" ", "T") + "Z"
+//       ).toLocaleTimeString([], {
+//         hour: "2-digit",
+//         minute: "2-digit",
+//         hour12: true,
+//       })}.`,
+//       variant: "destructive",
+//     });
+//     return;
+//   }
+
+//   setIsProcessing(true);
+
+//   try {
+//     const formData = new FormData();
+//     formData.append("video", videoFile);
+
+//     const response = await fetch(
+//       "https://floframe-be.vercel.app/api/extract-last-frame",
+//       // "https://13.222.13.17/api/extract-last-frame",
+//       // "http://13.222.13.17:4000/api/extract-last-frame",
+//       {
+//         method: "POST",
+//         body: formData,
+//       }
+//     );
+
+//     if (!response.ok) throw new Error("Extraction failed");
+
+//     const blob = await response.blob();
+//     const url = URL.createObjectURL(blob);
+//     setExtractedFrame(url);
+
+//     // ✅ Update usage_count and last_extraction in Supabase
+//     const { data, error } = await supabase
+//       .from("profiles")
+//       .update({
+//         usage_count: profile.usage_count + 1,
+//         last_extraction: new Date().toISOString(),
+//       })
+//       .eq("id", user.id)
+//       .select(); // fetch updated row
+
+//     if (!error && data?.[0]) {
+//       // Update profile state immediately
+//       setProfile(data[0]);
+//       toast({
+//         title: "Frame extracted",
+//         description: `Remaining: ${
+//           data[0].usage_limit - data[0].usage_count
+//         }`,
+//       });
+//     }
+//   } catch (error: any) {
+//     toast({
+//       title: "Extraction Failed",
+//       description: error.message,
+//       variant: "destructive",
+//     });
+//   } finally {
+//     setIsProcessing(false);
+//   }
+// };
