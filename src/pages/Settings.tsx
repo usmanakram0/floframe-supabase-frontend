@@ -15,6 +15,7 @@ import logo from "../assets/logo.png";
 import avatar from "../assets/avatar.png"; // static avatar image
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
+import { useNavigate } from "react-router-dom";
 
 const Settings = () => {
   const {
@@ -26,7 +27,7 @@ const Settings = () => {
     setDarkMode,
   } = useSettings();
   const { toast } = useToast();
-
+  const navigate = useNavigate();
   const { user } = useAuth(); // get current user
 
   const handleSave = () => {
@@ -38,9 +39,8 @@ const Settings = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    window.location.reload();
+    navigate("/auth", { replace: true });
   };
-
   return (
     <div className={darkMode ? "dark" : ""}>
       <div className="min-h-screen bg-background">

@@ -118,17 +118,44 @@ const Auth = () => {
 
   const signInWithGoogle = async () => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      options: {
+        redirectTo: window.location.origin, // must still be valid
+        skipBrowserRedirect: true, // ✅ THIS ENABLES POPUP MODE
+      },
     });
+
     setLoading(false);
+
     if (error) {
       toast({
         title: "Google Login Failed",
         description: error.message,
         variant: "destructive",
       });
+      return;
+    }
+
+    if (data?.url) {
+      // ✅ Open Google auth in popup instead of redirect
+      const popup = window.open(
+        data.url,
+        "google-oauth",
+        "width=500,height=600"
+      );
+
+      // ✅ Watch for login completion
+      const interval = setInterval(async () => {
+        const { data: sessionData } = await supabase.auth.getSession();
+
+        if (sessionData.session) {
+          clearInterval(interval);
+          popup?.close();
+          navigate("/", { replace: true });
+        }
+      }, 1000);
     }
   };
 
