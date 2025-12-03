@@ -1,24 +1,19 @@
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Cross-Origin-Opener-Policy = "same-origin"
-    Cross-Origin-Embedder-Policy = "require-corp"
-    Cross-Origin-Resource-Policy = "cross-origin"
+[build]
+  command = "npm run build"
+  publish = "dist"
 
-# Force correct MIME type for JS modules
 [[headers]]
   for = "/*.js"
   [headers.values]
     Content-Type = "text/javascript"
 
-# If you have WASM files too
 [[headers]]
   for = "/*.wasm"
   [headers.values]
     Content-Type = "application/wasm"
 
-[[headers]]
-  for = "/ffmpeg/*"
-  [headers.values]
-    Access-Control-Allow-Origin = "*"
-    Cross-Origin-Resource-Policy = "cross-origin"
+# For client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
