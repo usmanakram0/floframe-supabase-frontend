@@ -12,6 +12,8 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import NewPasswordPage from "./pages/NewPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,8 @@ const App = () => (
             <BrowserRouter>
               <Routes>
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/new-password" element={<NewPasswordPage />} />
                 <Route
                   path="/"
                   element={

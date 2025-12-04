@@ -43,6 +43,24 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      // Check if user already exists in auth.users
+      const { data: existingUser, error: fetchError } = await supabase
+        .from("profiles") // or your table where you store extra profile info
+        .select("id")
+        .eq("email", email)
+        .single();
+
+      if (existingUser) {
+        toast({
+          title: "User exists",
+          description: "A user with this email already exists",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Create user
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -51,41 +69,16 @@ const Auth = () => {
         },
       });
 
-      if (error) {
-        toast({
-          title: "Signup failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else if (data?.user) {
-        const { error: profileError } = await supabase.from("profiles").upsert(
-          {
-            id: data.user.id,
-            first_name: firstName,
-            last_name: lastName,
-            usage_count: 0,
-            usage_limit: 5, // free tier limit
-            plan: "free",
-          },
-          { onConflict: "id" }
-        );
+      if (error) throw error;
 
-        if (profileError) {
-          toast({
-            title: "Profile creation failed",
-            description: profileError.message,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Account created",
-            description: "You can now login",
-          });
-          setActiveTab("login");
-          setPassword("");
-          setConfirmPassword("");
-        }
-      }
+      toast({
+        title: "Account created",
+        description: "You can now login",
+      });
+
+      setActiveTab("login");
+      setPassword("");
+      setConfirmPassword("");
     } catch (err: any) {
       toast({
         title: "Signup error",
@@ -107,7 +100,7 @@ const Auth = () => {
     if (error) {
       toast({
         title: "Login failed",
-        description: "Please enter your email and password for login",
+        description: error?.message,
         variant: "destructive",
       });
     } else {
@@ -122,8 +115,8 @@ const Auth = () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin, // must still be valid
-        skipBrowserRedirect: true, // ✅ THIS ENABLES POPUP MODE
+        redirectTo: window.location.origin,
+        skipBrowserRedirect: true,
       },
     });
 
@@ -139,20 +132,33 @@ const Auth = () => {
     }
 
     if (data?.url) {
-      // ✅ Open Google auth in popup instead of redirect
       const popup = window.open(
         data.url,
         "google-oauth",
         "width=500,height=600"
       );
 
-      // ✅ Watch for login completion
       const interval = setInterval(async () => {
         const { data: sessionData } = await supabase.auth.getSession();
 
         if (sessionData.session) {
           clearInterval(interval);
           popup?.close();
+
+          // Update or insert profile
+          const user = sessionData.session.user;
+          if (user?.email) {
+            await supabase.from("profiles").upsert(
+              {
+                id: user.id,
+                email: user.email,
+                first_name: user.user_metadata?.full_name?.split(" ")[0] || "", // or map firstName
+                last_name: user.user_metadata?.full_name?.split(" ")[1] || "",
+              },
+              { onConflict: "id" }
+            );
+          }
+
           navigate("/", { replace: true });
         }
       }, 1000);
@@ -233,6 +239,7 @@ const Auth = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full p-3 rounded-xl bg-background text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -253,12 +260,22 @@ const Auth = () => {
 
               {/* Buttons */}
               {activeTab === "login" ? (
-                <Button
-                  onClick={signIn}
-                  disabled={loading}
-                  className="w-full h-12 text-lg">
-                  {loading ? "Logging in..." : "Login"}
-                </Button>
+                <>
+                  <Button
+                    onClick={signIn}
+                    disabled={loading}
+                    className="w-full h-12 text-lg">
+                    {loading ? "Logging in..." : "Login"}
+                  </Button>
+
+                  <div className="text-right">
+                    <button
+                      className="text-sm text-primary hover:underline"
+                      onClick={() => navigate("/reset-password")}>
+                      Forgot password?
+                    </button>
+                  </div>
+                </>
               ) : (
                 <Button
                   onClick={signUp}

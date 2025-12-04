@@ -16,6 +16,7 @@ import avatar from "../assets/avatar.png"; // static avatar image
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
+import { useUpload } from "@/contexts/UploadContext";
 
 const Settings = () => {
   const {
@@ -29,6 +30,7 @@ const Settings = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth(); // get current user
+  const { clearAll } = useUpload();
 
   const handleSave = () => {
     toast({
@@ -39,6 +41,7 @@ const Settings = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    clearAll();
     navigate("/auth", { replace: true });
   };
   return (

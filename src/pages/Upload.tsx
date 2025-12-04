@@ -231,141 +231,44 @@ const Upload = () => {
     }
   };
 
-  // const extractFrame = async () => {
-  //   if (isProcessing || !videoFile || !profile || !user) return;
-
-  //   const now = Date.now();
-  //   let usageCount = profile.usage_count;
-
-  //   if (profile.last_extraction) {
-  //     const lastExtractionMs = new Date(profile.last_extraction).getTime();
-
-  //     const diffMs = now - lastExtractionMs;
-  //     const diffMinutes = diffMs / (1000 * 60);
-
-  //     const RESET_AFTER_MINUTES = 1440;
-
-  //     if (diffMinutes >= RESET_AFTER_MINUTES) {
-  //       usageCount = 0;
-
-  //       const { data } = await supabase
-  //         .from("profiles")
-  //         .update({ usage_count: 0 })
-  //         .eq("id", user.id)
-  //         .select()
-  //         .single();
-
-  //       if (data) {
-  //         setProfile(data);
-  //       }
-  //     }
-  //   }
-
-  //   const lastExtractionDate = new Date(profile.last_extraction);
-  //   const nextResetDate = new Date(
-  //     lastExtractionDate.getTime() + 24 * 60 * 60 * 1000
-  //   );
-
-  //   const nextResetTimeLocal = nextResetDate.toLocaleTimeString([], {
-  //     hour: "2-digit",
-  //     minute: "2-digit",
-  //     hour12: true,
-  //   });
-
-  //   // 2025-12-03 13:23:56.697+00
-  //   if (usageCount >= profile.usage_limit) {
-  //     toast({
-  //       title: "Limit Reached",
-  //       description: `You have used all free extractions for today. Come again tomorrow at ${nextResetTimeLocal}.`,
-  //       variant: "destructive",
-  //     });
-  //     return;
-  //   }
-
-  //   setIsProcessing(true);
-
-  //   try {
-  //     const formData = new FormData();
-  //     formData.append("video", videoFile);
-
-  //     const response = await fetch(
-  //       "https://floframe-be.vercel.app/api/extract-last-frame",
-  //       { method: "POST", body: formData }
-  //     );
-
-  //     if (!response.ok) throw new Error("Extraction failed");
-
-  //     const blob = await response.blob();
-  //     const url = URL.createObjectURL(blob);
-  //     setExtractedFrame(url);
-
-  //     const { data, error } = await supabase
-  //       .from("profiles")
-  //       .update({
-  //         usage_count: usageCount + 1,
-  //         last_extraction: new Date().toISOString(),
-  //       })
-  //       .eq("id", user.id)
-  //       .select()
-  //       .single();
-
-  //     if (!error && data) {
-  //       setProfile(data);
-
-  //       toast({
-  //         title: "Frame extracted",
-  //         description: `Remaining: ${data.usage_limit - data.usage_count}`,
-  //       });
-  //     }
-  //   } catch (error: any) {
-  //     toast({
-  //       title: "Extraction Failed",
-  //       description: error.message,
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setIsProcessing(false);
-  //   }
-  // };
-
   const downloadFrame = async () => {
     if (!extractedFrame) return;
+
     try {
       const blob = await (await fetch(extractedFrame)).blob();
       const fileName = `floframe-${Date.now()}.png`;
-      const file = new File([blob], fileName, { type: "image/png" });
 
       const ua = navigator.userAgent;
       const isIOS = /iPad|iPhone|iPod/.test(ua);
-      const isAndroid = /Android/.test(ua);
 
-      if (isIOS && navigator.share) {
-        toast({
-          title: "Save to Photos",
-          description: "In the next screen, tap 'Save to Photos'.",
-        });
-
-        try {
-          await navigator.share({
-            files: [file],
-            title: "FloFrame",
-            text: "Save frame to Photos",
-          });
-        } catch {
-          const newTab = window.open();
-          if (newTab) {
-            newTab.document.write(
-              `<img src="${extractedFrame}" style="width:100%" />`
-            );
+      if (isIOS) {
+        // iOS: try Web Share API first
+        const file = new File([blob], fileName, { type: "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: "FloFrame",
+              text: "Save this frame to Photos",
+            });
+            toast({
+              title: "Save to Photos",
+              description: "In the next screen, tap 'Save to Photos'.",
+            });
+          } catch {
+            // fallback: open image in new tab for long-press saving
+            const newTab = window.open(extractedFrame, "_blank");
+            if (!newTab)
+              throw new Error("Please allow pop-ups to save the image.");
           }
+        } else {
+          // fallback for older iOS: open in new tab
+          const newTab = window.open(extractedFrame, "_blank");
+          if (!newTab)
+            throw new Error("Please allow pop-ups to save the image.");
         }
-      } else if (isAndroid && navigator.share) {
-        await navigator.share({
-          files: [file],
-          title: "FloFrame",
-          text: "Save frame to Gallery",
-        });
       } else {
+        // Android & Desktop: standard download
         const link = document.createElement("a");
         link.href = extractedFrame;
         link.download = fileName;
@@ -378,8 +281,13 @@ const Upload = () => {
       setVideoFile(null);
       setVideoInfo(null);
       setUploadProgress(0);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast({
+        title: "Download Failed",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
