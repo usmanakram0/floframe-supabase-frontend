@@ -118,119 +118,6 @@ const Upload = () => {
     if (file) handleFileSelect(file);
   };
 
-  // const extractFrame = async () => {
-  //   if (isProcessing || !videoFile || !profile || !user) return;
-
-  //   const now = Date.now();
-  //   let usageCount = profile.usage_count;
-
-  //   // ------------------ RESET LOGIC (UNCHANGED) ------------------
-  //   if (profile.last_extraction) {
-  //     const lastExtractionMs = new Date(profile.last_extraction).getTime();
-  //     const diffMinutes = (now - lastExtractionMs) / (1000 * 60);
-  //     const RESET_AFTER_MINUTES = 1440;
-
-  //     if (diffMinutes >= RESET_AFTER_MINUTES) {
-  //       usageCount = 0;
-
-  //       const { data } = await supabase
-  //         .from("profiles")
-  //         .update({ usage_count: 0 })
-  //         .eq("id", user.id)
-  //         .select()
-  //         .single();
-
-  //       if (data) setProfile(data);
-  //     }
-  //   }
-
-  //   const lastExtractionDate = new Date(profile.last_extraction);
-  //   const nextResetDate = new Date(
-  //     lastExtractionDate.getTime() + 24 * 60 * 60 * 1000
-  //   );
-
-  //   const nextResetTimeLocal = nextResetDate.toLocaleTimeString([], {
-  //     hour: "2-digit",
-  //     minute: "2-digit",
-  //     hour12: true,
-  //   });
-
-  //   if (usageCount >= profile.usage_limit) {
-  //     toast({
-  //       title: "Limit Reached",
-  //       description: `You have used all free extractions for today. Come again tomorrow at ${nextResetTimeLocal}.`,
-  //       variant: "destructive",
-  //     });
-  //     return;
-  //   }
-
-  //   // ------------------ FRONTEND FRAME EXTRACTION ------------------
-  //   setIsProcessing(true);
-
-  //   try {
-  //     const video = document.createElement("video");
-  //     video.src = URL.createObjectURL(videoFile);
-  //     video.crossOrigin = "anonymous";
-  //     video.muted = true;
-  //     video.playsInline = true;
-
-  //     await new Promise((resolve) => {
-  //       video.onloadedmetadata = resolve;
-  //     });
-
-  //     // Jump to LAST frame safely
-  //     video.currentTime = Math.max(0, video.duration - 0.1);
-
-  //     await new Promise((resolve) => {
-  //       video.onseeked = resolve;
-  //     });
-
-  //     const canvas = document.createElement("canvas");
-  //     canvas.width = video.videoWidth;
-  //     canvas.height = video.videoHeight;
-
-  //     const ctx = canvas.getContext("2d");
-  //     ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-  //     const blob: Blob | null = await new Promise((res) =>
-  //       canvas.toBlob(res, "image/png")
-  //     );
-
-  //     if (!blob) throw new Error("Frame capture failed");
-
-  //     const url = URL.createObjectURL(blob);
-  //     setExtractedFrame(url);
-
-  //     // ------------------ UPDATE USAGE IN SUPABASE ------------------
-  //     const { data, error } = await supabase
-  //       .from("profiles")
-  //       .update({
-  //         usage_count: usageCount + 1,
-  //         last_extraction: new Date().toISOString(),
-  //       })
-  //       .eq("id", user.id)
-  //       .select()
-  //       .single();
-
-  //     if (!error && data) {
-  //       setProfile(data);
-
-  //       toast({
-  //         title: "Frame extracted",
-  //         description: `Remaining: ${data.usage_limit - data.usage_count}`,
-  //       });
-  //     }
-  //   } catch (error: any) {
-  //     toast({
-  //       title: "Extraction Failed",
-  //       description: error.message,
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setIsProcessing(false);
-  //   }
-  // };
-
   const extractFrame = async () => {
     if (isProcessing || !videoFile || !profile || !user) return;
 
@@ -328,6 +215,73 @@ const Upload = () => {
       setIsProcessing(false);
     }
   };
+  // const downloadFrame = async () => {
+  //   if (!extractedFrame) return;
+
+  //   try {
+  //     const blob = await (await fetch(extractedFrame)).blob();
+  //     const fileName = `floframe-${Date.now()}.png`;
+
+  //     const ua = navigator.userAgent;
+  //     const isIOS = /iPad|iPhone|iPod/.test(ua);
+
+  //     if (isIOS) {
+  //       // iOS: try Web Share API first
+  //       const file = new File([blob], fileName, { type: "image/png" });
+  //       if (navigator.canShare && navigator.canShare({ files: [file] })) {
+  //         try {
+  //           await navigator.share({
+  //             files: [file],
+  //             title: "FloFrame",
+  //             text: "Save this frame to Photos",
+  //           });
+  //           toast({
+  //             title: "Save to Photos",
+  //             description: "In the next screen, tap 'Save to Photos'.",
+  //           });
+  //         } catch {
+  //           // fallback: open image in new tab for long-press saving
+  //           const newTab = window.open(extractedFrame, "_blank");
+  //           if (!newTab)
+  //             throw new Error("Please allow pop-ups to save the image.");
+  //         }
+  //       } else {
+  //         // fallback for older iOS: open in new tab
+  //         const newTab = window.open(extractedFrame, "_blank");
+  //         if (!newTab)
+  //           throw new Error("Please allow pop-ups to save the image.");
+  //       }
+  //     } else {
+  //       // Android & Desktop: standard download
+  //       const link = document.createElement("a");
+  //       link.href = extractedFrame;
+  //       link.download = fileName;
+  //       document.body.appendChild(link);
+  //       link.click();
+  //       document.body.removeChild(link);
+  //     }
+
+  //     setExtractedFrame(null);
+  //     setVideoFile(null);
+  //     setVideoInfo(null);
+  //     setUploadProgress(0);
+  //   } catch (err: any) {
+  //     console.error(err);
+  //     toast({
+  //       title: "Download Failed",
+  //       description: err.message,
+  //       variant: "destructive",
+  //     });
+  //   }
+  // };
+
+  // const clearAll = () => {
+  //   setVideoFile(null);
+  //   setExtractedFrame(null);
+  //   setVideoInfo(null);
+  //   setUploadProgress(0);
+  // };
+
   const downloadFrame = async () => {
     if (!extractedFrame) return;
 
@@ -339,8 +293,9 @@ const Upload = () => {
       const isIOS = /iPad|iPhone|iPod/.test(ua);
 
       if (isIOS) {
-        // iOS: try Web Share API first
         const file = new File([blob], fileName, { type: "image/png" });
+
+        // 1️⃣ Use Web Share API if available (direct save to Photos)
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
             await navigator.share({
@@ -352,18 +307,33 @@ const Upload = () => {
               title: "Save to Photos",
               description: "In the next screen, tap 'Save to Photos'.",
             });
+            resetState();
+            return;
           } catch {
-            // fallback: open image in new tab for long-press saving
-            const newTab = window.open(extractedFrame, "_blank");
-            if (!newTab)
-              throw new Error("Please allow pop-ups to save the image.");
+            console.warn("Share API failed, falling back to iOS download hack");
           }
-        } else {
-          // fallback for older iOS: open in new tab
-          const newTab = window.open(extractedFrame, "_blank");
-          if (!newTab)
-            throw new Error("Please allow pop-ups to save the image.");
         }
+
+        // 2️⃣ Fallback: trick iOS into downloading
+        // iOS only supports downloads for same-origin URLs, so we create an object URL
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = fileName;
+
+        // Must be a **synchronous click triggered by user gesture**
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        // Revoke object URL after a short delay to allow iOS to process
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+
+        toast({
+          title: "Frame ready",
+          description: "Check your Photos or Files app.",
+        });
       } else {
         // Android & Desktop: standard download
         const link = document.createElement("a");
@@ -374,10 +344,7 @@ const Upload = () => {
         document.body.removeChild(link);
       }
 
-      setExtractedFrame(null);
-      setVideoFile(null);
-      setVideoInfo(null);
-      setUploadProgress(0);
+      resetState();
     } catch (err: any) {
       console.error(err);
       toast({
@@ -388,9 +355,10 @@ const Upload = () => {
     }
   };
 
-  const clearAll = () => {
-    setVideoFile(null);
+  // helper to reset state
+  const resetState = () => {
     setExtractedFrame(null);
+    setVideoFile(null);
     setVideoInfo(null);
     setUploadProgress(0);
   };
@@ -573,74 +541,3 @@ const Upload = () => {
 };
 
 export default Upload;
-
-// const extractFrame = async () => {
-//   if (!videoFile || !profile || !user) return;
-
-//   if (profile.usage_count >= profile.usage_limit) {
-//     toast({
-//       title: "Limit Reached",
-//       description: `You have used all free extractions for today. Come again tomorrow at ${new Date(
-//         profile.last_extraction.replace(" ", "T") + "Z"
-//       ).toLocaleTimeString([], {
-//         hour: "2-digit",
-//         minute: "2-digit",
-//         hour12: true,
-//       })}.`,
-//       variant: "destructive",
-//     });
-//     return;
-//   }
-
-//   setIsProcessing(true);
-
-//   try {
-//     const formData = new FormData();
-//     formData.append("video", videoFile);
-
-//     const response = await fetch(
-//       "https://floframe-be.vercel.app/api/extract-last-frame",
-//       // "https://13.222.13.17/api/extract-last-frame",
-//       // "http://13.222.13.17:4000/api/extract-last-frame",
-//       {
-//         method: "POST",
-//         body: formData,
-//       }
-//     );
-
-//     if (!response.ok) throw new Error("Extraction failed");
-
-//     const blob = await response.blob();
-//     const url = URL.createObjectURL(blob);
-//     setExtractedFrame(url);
-
-//     // ✅ Update usage_count and last_extraction in Supabase
-//     const { data, error } = await supabase
-//       .from("profiles")
-//       .update({
-//         usage_count: profile.usage_count + 1,
-//         last_extraction: new Date().toISOString(),
-//       })
-//       .eq("id", user.id)
-//       .select(); // fetch updated row
-
-//     if (!error && data?.[0]) {
-//       // Update profile state immediately
-//       setProfile(data[0]);
-//       toast({
-//         title: "Frame extracted",
-//         description: `Remaining: ${
-//           data[0].usage_limit - data[0].usage_count
-//         }`,
-//       });
-//     }
-//   } catch (error: any) {
-//     toast({
-//       title: "Extraction Failed",
-//       description: error.message,
-//       variant: "destructive",
-//     });
-//   } finally {
-//     setIsProcessing(false);
-//   }
-// };

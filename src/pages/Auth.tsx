@@ -48,7 +48,7 @@ const Auth = () => {
         .from("profiles") // or your table where you store extra profile info
         .select("id")
         .eq("email", email)
-        .single();
+        .maybeSingle();
 
       if (existingUser) {
         toast({
