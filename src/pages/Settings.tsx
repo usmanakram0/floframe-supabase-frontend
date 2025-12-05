@@ -39,11 +39,51 @@ const Settings = () => {
     });
   };
 
+  const handleSubscribe = async (priceId: string) => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please sign in first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Call your backend Supabase function (we’ll fill URL and keys later)
+      const res = await fetch(
+        "https://prgyccukphmtwsqedhlz.supabase.co/functions/v1/create-checkout-session",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, // or your key
+          },
+          body: JSON.stringify({ priceId, userId: user.id }),
+        }
+      );
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url; // redirect user to Stripe Checkout
+      } else {
+        throw new Error("Unable to create checkout session");
+      }
+    } catch (err: any) {
+      toast({
+        title: "Payment Error",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     clearAll();
     navigate("/auth", { replace: true });
   };
+
   return (
     <div className={darkMode ? "dark" : ""}>
       <div className="min-h-screen bg-background">
@@ -57,6 +97,34 @@ const Settings = () => {
               </div>
               <h1 className="text-3xl font-bold text-foreground">Settings</h1>
             </div>
+
+            {/* FloFrame Pro / Subscription */}
+            {/* <div className="bg-card rounded-2xl border border-border p-6 space-y-4">
+              <h3 className="text-lg font-medium text-foreground">
+                FloFrame Pro
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Unlock unlimited frame extractions, faster processing, and
+                premium features.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 mt-4">
+                <Button
+                  onClick={() =>
+                    handleSubscribe("price_1Sb5FPDvJPahImiq2vQHSnAC")
+                  } // Monthly price ID
+                  className="flex-1 h-14 text-lg font-semibold bg-primary hover:bg-primary/90">
+                  $5 / Month
+                </Button>
+                <Button
+                  onClick={() =>
+                    handleSubscribe("price_1Sb5FPDvJPahImiqIrD7LHw0")
+                  } // Yearly price ID
+                  className="flex-1 h-14 text-lg font-semibold bg-primary hover:bg-primary/90">
+                  $50 / Year
+                </Button>
+              </div>
+            </div> */}
 
             <div className="bg-card rounded-2xl border border-border divide-y divide-border">
               {/* Frame Rate */}

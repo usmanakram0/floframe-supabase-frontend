@@ -115,7 +115,10 @@ const Upload = () => {
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) handleFileSelect(file);
+    if (file) {
+      handleFileSelect(file);
+      extractFrame();
+    }
   };
 
   const extractFrame = async () => {
@@ -364,7 +367,14 @@ const Upload = () => {
   };
 
   useEffect(() => {
-    if (videoFile && uploadProgress === 100 && !extractedFrame) extractFrame();
+    if (
+      videoFile &&
+      uploadProgress === 100 &&
+      !extractedFrame &&
+      !isProcessing
+    ) {
+      extractFrame();
+    }
   }, [uploadProgress, videoFile]);
 
   useEffect(() => {
@@ -507,30 +517,19 @@ const Upload = () => {
               </div>
             )}
 
-            {/* Action Buttons */}
             {videoFile && uploadProgress >= 100 && (
               <div className="space-y-4">
-                {extractedFrame ? (
-                  <div className="flex gap-4">
-                    <Button
-                      onClick={downloadFrame}
-                      className="flex-1 h-16 text-xl font-bold bg-primary hover:bg-primary/90 rounded-2xl">
-                      {/* <Download className="w-6 h-6 mr-2" /> */}
-                      Extract Frame
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    onClick={extractFrame}
-                    disabled={
-                      isProcessing ||
-                      profileLoading ||
-                      profile?.usage_count >= profile?.usage_limit
-                    }
-                    className="w-full h-16 text-xl font-bold bg-primary hover:bg-primary/90 rounded-2xl">
-                    {isProcessing ? "Processing..." : "Extract Frame"}
+                {isProcessing ? (
+                  <Button className="w-full h-16 text-xl font-bold bg-primary hover:bg-primary/90 rounded-2xl">
+                    Processing...
                   </Button>
-                )}
+                ) : extractedFrame ? (
+                  <Button
+                    onClick={downloadFrame}
+                    className="w-full h-16 text-xl font-bold bg-primary hover:bg-primary/90 rounded-2xl">
+                    Save Frame
+                  </Button>
+                ) : null}
               </div>
             )}
           </div>
