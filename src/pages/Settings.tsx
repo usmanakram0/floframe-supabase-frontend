@@ -51,13 +51,17 @@ const Settings = () => {
 
     try {
       // Call your backend Supabase function (we’ll fill URL and keys later)
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       const res = await fetch(
         "https://prgyccukphmtwsqedhlz.supabase.co/functions/v1/create-checkout-session",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, // or your key
+            Authorization: `Bearer ${session?.access_token}`,
           },
           body: JSON.stringify({ priceId, userId: user.id }),
         }
@@ -98,7 +102,6 @@ const Settings = () => {
               <h1 className="text-3xl font-bold text-foreground">Settings</h1>
             </div>
 
-            {/* FloFrame Pro / Subscription */}
             {/* <div className="bg-card rounded-2xl border border-border p-6 space-y-4">
               <h3 className="text-lg font-medium text-foreground">
                 FloFrame Pro
@@ -111,15 +114,15 @@ const Settings = () => {
               <div className="flex flex-col sm:flex-row gap-4 mt-4">
                 <Button
                   onClick={() =>
-                    handleSubscribe("price_1Sb5FPDvJPahImiq2vQHSnAC")
-                  } // Monthly price ID
+                    handleSubscribe("price_1Sb5FPDvJPahImiqIrD7LHw0")
+                  }
                   className="flex-1 h-14 text-lg font-semibold bg-primary hover:bg-primary/90">
                   $5 / Month
                 </Button>
                 <Button
                   onClick={() =>
-                    handleSubscribe("price_1Sb5FPDvJPahImiqIrD7LHw0")
-                  } // Yearly price ID
+                    handleSubscribe("price_1Sb5FPDvJPahImiq2vQHSnAC")
+                  }
                   className="flex-1 h-14 text-lg font-semibold bg-primary hover:bg-primary/90">
                   $50 / Year
                 </Button>

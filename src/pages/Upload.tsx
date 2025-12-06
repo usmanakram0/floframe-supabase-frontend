@@ -291,61 +291,50 @@ const Upload = () => {
     try {
       const blob = await (await fetch(extractedFrame)).blob();
       const fileName = `floframe-${Date.now()}.png`;
-
       const ua = navigator.userAgent;
       const isIOS = /iPad|iPhone|iPod/.test(ua);
 
       if (isIOS) {
         const file = new File([blob], fileName, { type: "image/png" });
 
-        // 1️⃣ Use Web Share API if available (direct save to Photos)
+        // ✅ BEST METHOD — Saves directly to Photos via system UI
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({
-              files: [file],
-              title: "FloFrame",
-              text: "Save this frame to Photos",
-            });
-            toast({
-              title: "Save to Photos",
-              description: "In the next screen, tap 'Save to Photos'.",
-            });
-            resetState();
-            return;
-          } catch {
-            console.warn("Share API failed, falling back to iOS download hack");
-          }
+          await navigator.share({
+            files: [file],
+            title: "FloFrame",
+            text: "Tap 'Save to Photos'",
+          });
+
+          toast({
+            title: "Almost Done",
+            description: "Tap 'Save to Photos' in the sheet",
+          });
+
+          resetState();
+          return;
         }
 
-        // 2️⃣ Fallback: trick iOS into downloading
-        // iOS only supports downloads for same-origin URLs, so we create an object URL
+        // ✅ FALLBACK — Open image for long-press saving
         const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = blobUrl;
-        a.download = fileName;
-
-        // Must be a **synchronous click triggered by user gesture**
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-
-        // Revoke object URL after a short delay to allow iOS to process
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        window.open(blobUrl, "_blank");
 
         toast({
-          title: "Frame ready",
-          description: "Check your Photos or Files app.",
+          title: "Save Image",
+          description: "Long-press the image and tap 'Save to Photos'",
         });
-      } else {
-        // Android & Desktop: standard download
-        const link = document.createElement("a");
-        link.href = extractedFrame;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        resetState();
+        return;
       }
+
+      // ✅ ANDROID + DESKTOP (UNCHANGED)
+      const link = document.createElement("a");
+      link.href = extractedFrame;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       resetState();
     } catch (err: any) {
