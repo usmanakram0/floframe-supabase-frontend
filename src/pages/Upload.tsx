@@ -524,7 +524,7 @@ const Upload = () => {
                   <Button
                     onClick={downloadFrame}
                     className="w-full h-16 text-xl font-bold bg-primary hover:bg-primary/90 rounded-2xl">
-                    Save Frame
+                    Save
                   </Button>
                 ) : null}
               </div>
