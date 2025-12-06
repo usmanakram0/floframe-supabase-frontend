@@ -120,21 +120,24 @@ const Settings = () => {
                   <>
                     <p className="text-sm text-muted-foreground">
                       Plan:{" "}
-                      <span className="font-medium capitalize text-white">
+                      <span
+                        className={`${
+                          darkMode ? "text-white" : "text-black"
+                        } font-medium capitalize`}>
                         {subscription.plan}
                       </span>
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      Status:{" "}
-                      <span className="font-medium capitalize text-white">
-                        {subscription.subscription_status}
-                      </span>
-                    </p>
+
                     {subscription.billing_interval && (
                       <p className="text-sm text-muted-foreground">
                         Active Plan:{" "}
-                        <span className="font-medium capitalize text-white">
-                          {subscription.billing_interval}
+                        <span
+                          className={`${
+                            darkMode ? "text-white" : "text-black"
+                          } font-medium capitalize`}>
+                          {subscription.billing_interval === "year"
+                            ? "Yearly"
+                            : "Monthly"}
                         </span>
                       </p>
                     )}

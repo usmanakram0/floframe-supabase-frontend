@@ -323,7 +323,7 @@ const Upload = () => {
 
         toast({
           title: "Save Image",
-          description: "Long-press the image and tap 'Save to Photos'",
+          description: "Saved to Photos",
         });
 
         setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
@@ -412,12 +412,10 @@ const Upload = () => {
               </div>
               <h1 className="text-2xl sm:text-4xl font-bold text-foreground">
                 FloFrame
+                {subscription && subscription.plan === "paid" && (
+                  <p className="text-primary text-sm p-0 font-bold">Premium</p>
+                )}
               </h1>
-              {subscription && subscription.plan === "paid" && (
-                <p className="text-primary text-sm p-0 mt-[22px] -ml-[8px] font-bold">
-                  Pro
-                </p>
-              )}
             </div>
 
             {/* Clickable Upload Box */}
