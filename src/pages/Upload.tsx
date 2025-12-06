@@ -9,6 +9,7 @@ import logo from "../assets/logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabaseClient";
+import { useSubscribe } from "@/contexts/SubscribeContext";
 
 const Upload = () => {
   const {
@@ -24,6 +25,8 @@ const Upload = () => {
   const { darkMode } = useSettings();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const { subscription, loading: loadingSub } = useSubscribe();
+
   const { toast } = useToast();
 
   const { user } = useAuth();
@@ -410,10 +413,15 @@ const Upload = () => {
               <h1 className="text-2xl sm:text-4xl font-bold text-foreground">
                 FloFrame
               </h1>
+              {subscription && subscription.plan === "paid" && (
+                <p className="text-primary text-sm p-0 mt-[22px] -ml-[8px] font-bold">
+                  Pro
+                </p>
+              )}
             </div>
 
             {/* Clickable Upload Box */}
-            {profile && (
+            {profile && profile.usage_limit <= 20 && (
               <div className="text-center text-sm text-muted-foreground mb-2">
                 {profile.usage_count < profile.usage_limit ? (
                   <>
