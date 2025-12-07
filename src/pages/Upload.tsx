@@ -26,6 +26,7 @@ const Upload = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const { subscription, loading: loadingSub } = useSubscribe();
+  const [extractedBlob, setExtractedBlob] = useState<Blob | null>(null);
 
   const { toast } = useToast();
 
@@ -191,6 +192,8 @@ const Upload = () => {
 
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
+
+      setExtractedBlob(blob); // ✅ store real blob
       setExtractedFrame(url);
 
       const { data, error } = await supabase
@@ -289,51 +292,50 @@ const Upload = () => {
   // };
 
   const downloadFrame = async () => {
-    if (!extractedFrame) return;
+    if (!extractedBlob) return;
 
     try {
-      const blob = await (await fetch(extractedFrame)).blob();
       const fileName = `floframe-${Date.now()}.png`;
-      const ua = navigator.userAgent;
-      const isIOS = /iPad|iPhone|iPod/.test(ua);
+
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
       if (isIOS) {
-        const file = new File([blob], fileName, { type: "image/png" });
+        const file = new File([extractedBlob], fileName, {
+          type: "image/png",
+        });
 
-        // ✅ BEST METHOD — Saves directly to Photos via system UI
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: "FloFrame",
-            text: "Tap 'Save to Photos'",
-          });
-
+        // ✅ STRICT SHARE SHEET ONLY
+        if (
+          !navigator.share ||
+          !navigator.canShare ||
+          !navigator.canShare({ files: [file] })
+        ) {
           toast({
-            title: "Done",
-            description: "Saved to Photos",
+            title: "Not Supported",
+            description: "Your iOS version does not support Save to Photos.",
+            variant: "destructive",
           });
-
-          resetState();
           return;
         }
 
-        // ✅ FALLBACK — Open image for long-press saving
-        const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, "_blank");
-
-        toast({
-          title: "Save Image",
-          description: "Saved to Files",
+        // ✅ MUST BE DIRECT BUTTON TAP (it is, in your JSX ✅)
+        await navigator.share({
+          files: [file],
+          title: "FloFrame",
         });
 
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        toast({
+          title: "Done",
+          description: "Saved to Photos",
+        });
+
         resetState();
         return;
       }
 
-      // ✅ ANDROID + DESKTOP (UNCHANGED)
+      // ✅ ANDROID + DESKTOP
       const link = document.createElement("a");
-      link.href = extractedFrame;
+      link.href = extractedFrame!;
       link.download = fileName;
       document.body.appendChild(link);
       link.click();
@@ -353,6 +355,7 @@ const Upload = () => {
   // helper to reset state
   const resetState = () => {
     setExtractedFrame(null);
+    setExtractedBlob(null);
     setVideoFile(null);
     setVideoInfo(null);
     setUploadProgress(0);
