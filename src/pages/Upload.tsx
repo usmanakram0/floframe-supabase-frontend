@@ -294,57 +294,44 @@ const Upload = () => {
     try {
       const blob = await (await fetch(extractedFrame)).blob();
       const fileName = `floframe-${Date.now()}.png`;
-
       const ua = navigator.userAgent;
       const isIOS = /iPad|iPhone|iPod/.test(ua);
 
-      /* ======================================================
-       ✅ iOS LOGIC (NEW + OLD VERSIONS HANDLED)
-       ====================================================== */
       if (isIOS) {
         const file = new File([blob], fileName, { type: "image/png" });
 
-        /* ✅ NEW iOS — SAVES TO PHOTOS */
+        // ✅ BEST METHOD — Saves directly to Photos via system UI
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
             title: "FloFrame",
-            text: "Save to Photos",
+            text: "Tap 'Save to Photos'",
           });
 
           toast({
-            title: "Saved to Photos",
-            description: "Your frame was saved to the Photos gallery.",
+            title: "Done",
+            description: "Saved to Photos",
           });
 
           resetState();
           return;
         }
 
-        /* ⚠️ OLD iOS — FALLBACK TO FILES */
+        // ✅ FALLBACK — Open image for long-press saving
         const blobUrl = URL.createObjectURL(blob);
-
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        window.open(blobUrl, "_blank");
 
         toast({
-          title: "Saved to Files",
-          description: "Your frame was saved in the Files app (Downloads).",
+          title: "Save Image",
+          description: "Saved to Files",
         });
 
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
         resetState();
         return;
       }
 
-      /* ======================================================
-       ✅ ANDROID + DESKTOP (UNCHANGED)
-       ====================================================== */
+      // ✅ ANDROID + DESKTOP (UNCHANGED)
       const link = document.createElement("a");
       link.href = extractedFrame;
       link.download = fileName;
