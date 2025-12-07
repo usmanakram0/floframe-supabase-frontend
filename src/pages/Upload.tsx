@@ -26,7 +26,6 @@ const Upload = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const { subscription, loading: loadingSub } = useSubscribe();
-  const [extractedBlob, setExtractedBlob] = useState<Blob | null>(null);
 
   const { toast } = useToast();
 
@@ -192,8 +191,6 @@ const Upload = () => {
 
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
-
-      setExtractedBlob(blob); // ✅ store real blob
       setExtractedFrame(url);
 
       const { data, error } = await supabase
@@ -290,52 +287,27 @@ const Upload = () => {
   //   setVideoInfo(null);
   //   setUploadProgress(0);
   // };
-
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const downloadFrame = async () => {
-    if (!extractedBlob) return;
+    if (!extractedFrame) return;
 
     try {
+      const blob = await (await fetch(extractedFrame)).blob();
       const fileName = `floframe-${Date.now()}.png`;
 
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
       if (isIOS) {
-        const file = new File([extractedBlob], fileName, {
-          type: "image/png",
-        });
-
-        // ✅ STRICT SHARE SHEET ONLY
-        if (
-          !navigator.share ||
-          !navigator.canShare ||
-          !navigator.canShare({ files: [file] })
-        ) {
-          toast({
-            title: "Not Supported",
-            description: "Your iOS version does not support Save to Photos.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // ✅ MUST BE DIRECT BUTTON TAP (it is, in your JSX ✅)
-        await navigator.share({
-          files: [file],
-          title: "FloFrame",
-        });
-
+        // On iOS, we do NOT download automatically
         toast({
-          title: "Done",
-          description: "Saved to Photos",
+          title: "iOS Device Detected",
+          description:
+            "Press and hold the image above, then select 'Save to Photos'.",
         });
-
-        resetState();
         return;
       }
 
-      // ✅ ANDROID + DESKTOP
+      // Android + Desktop: standard download
       const link = document.createElement("a");
-      link.href = extractedFrame!;
+      link.href = extractedFrame;
       link.download = fileName;
       document.body.appendChild(link);
       link.click();
@@ -355,7 +327,6 @@ const Upload = () => {
   // helper to reset state
   const resetState = () => {
     setExtractedFrame(null);
-    setExtractedBlob(null);
     setVideoFile(null);
     setVideoInfo(null);
     setUploadProgress(0);
@@ -512,6 +483,11 @@ const Upload = () => {
                     className="w-full h-auto object-contain"
                   />
                 </div>
+                {isIOS && (
+                  <p className="text-sm font-semibold text-muted-foreground mt-2 text-center">
+                    Press and hold the image to save it to Photos
+                  </p>
+                )}
               </div>
             )}
 
@@ -521,7 +497,7 @@ const Upload = () => {
                   <Button className="w-full h-16 text-xl font-bold bg-primary hover:bg-primary/90 rounded-2xl">
                     Processing...
                   </Button>
-                ) : extractedFrame ? (
+                ) : extractedFrame && !isIOS ? (
                   <Button
                     onClick={downloadFrame}
                     className="w-full h-16 text-xl font-bold bg-primary hover:bg-primary/90 rounded-2xl">
