@@ -294,44 +294,44 @@ const Upload = () => {
     try {
       const blob = await (await fetch(extractedFrame)).blob();
       const fileName = `floframe-${Date.now()}.png`;
+
       const ua = navigator.userAgent;
       const isIOS = /iPad|iPhone|iPod/.test(ua);
 
+      /* ======================================================
+       ✅ iOS — PHOTOS ONLY (NO FILES, NO LONG-PRESS)
+       ====================================================== */
       if (isIOS) {
         const file = new File([blob], fileName, { type: "image/png" });
 
-        // ✅ BEST METHOD — Saves directly to Photos via system UI
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: "FloFrame",
-            text: "Tap 'Save to Photos'",
-          });
-
+        if (!navigator.share) {
           toast({
-            title: "Almost Done",
-            description: "Tap 'Save to Photos' in the sheet",
+            title: "Not Supported",
+            description:
+              "Your iOS version does not allow saving directly to Photos from the browser.",
+            variant: "destructive",
           });
-
-          resetState();
           return;
         }
 
-        // ✅ FALLBACK — Open image for long-press saving
-        const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, "_blank");
+        await navigator.share({
+          files: [file],
+          title: "FloFrame",
+          text: "Save to Photos",
+        });
 
         toast({
-          title: "Save Image",
+          title: "Saved",
           description: "Saved to Photos",
         });
 
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
         resetState();
         return;
       }
 
-      // ✅ ANDROID + DESKTOP (UNCHANGED)
+      /* ======================================================
+       ✅ ANDROID + DESKTOP — UNCHANGED
+       ====================================================== */
       const link = document.createElement("a");
       link.href = extractedFrame;
       link.download = fileName;
