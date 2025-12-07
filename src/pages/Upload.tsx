@@ -299,30 +299,43 @@ const Upload = () => {
       const isIOS = /iPad|iPhone|iPod/.test(ua);
 
       /* ======================================================
-       ✅ iOS — PHOTOS ONLY (NO FILES, NO LONG-PRESS)
+       ✅ iOS LOGIC (NEW + OLD VERSIONS HANDLED)
        ====================================================== */
       if (isIOS) {
         const file = new File([blob], fileName, { type: "image/png" });
 
-        if (!navigator.share) {
-          toast({
-            title: "Not Supported",
-            description:
-              "Your iOS version does not allow saving directly to Photos from the browser.",
-            variant: "destructive",
+        /* ✅ NEW iOS — SAVES TO PHOTOS */
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: "FloFrame",
+            text: "Save to Photos",
           });
+
+          toast({
+            title: "Saved to Photos",
+            description: "Your frame was saved to the Photos gallery.",
+          });
+
+          resetState();
           return;
         }
 
-        await navigator.share({
-          files: [file],
-          title: "FloFrame",
-          text: "Save to Photos",
-        });
+        /* ⚠️ OLD iOS — FALLBACK TO FILES */
+        const blobUrl = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
 
         toast({
-          title: "Saved",
-          description: "Saved to Photos",
+          title: "Saved to Files",
+          description: "Your frame was saved in the Files app (Downloads).",
         });
 
         resetState();
@@ -330,7 +343,7 @@ const Upload = () => {
       }
 
       /* ======================================================
-       ✅ ANDROID + DESKTOP — UNCHANGED
+       ✅ ANDROID + DESKTOP (UNCHANGED)
        ====================================================== */
       const link = document.createElement("a");
       link.href = extractedFrame;
