@@ -113,7 +113,10 @@ const Upload = () => {
     setIsDragging(false);
 
     const file = e.dataTransfer.files[0];
-    if (file) handleFileSelect(file);
+    if (file) {
+      resetState();
+      handleFileSelect(file);
+    }
   }, []);
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,6 +125,8 @@ const Upload = () => {
       handleFileSelect(file);
       extractFrame();
     }
+
+    e.target.value = "";
   };
 
   const extractFrame = async () => {
@@ -502,6 +507,12 @@ const Upload = () => {
                     onClick={downloadFrame}
                     className="w-full h-16 text-xl font-bold bg-primary hover:bg-primary/90 rounded-2xl">
                     Save
+                  </Button>
+                ) : extractedFrame && isIOS ? (
+                  <Button
+                    onClick={resetState}
+                    className="w-full h-16 text-xl font-bold rounded-2xl border border-border">
+                    New video
                   </Button>
                 ) : null}
               </div>
