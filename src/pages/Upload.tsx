@@ -463,7 +463,7 @@ const Upload = () => {
               </div>
             </div>
 
-            {/* Progress Bar */}
+            {/* Progress Bar a */}
             {videoFile && uploadProgress !== 0 && (
               <div className="space-y-1">
                 <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
