@@ -78,24 +78,36 @@ const Upload = () => {
   const handleFileSelect = async (file: File) => {
     if (!validateFile(file)) return;
 
-    setUploadProgress(0);
-    setVideoFile(file);
-    const info = await getVideoInfo(file);
-    setVideoInfo(info);
+    // ✅ FULL RESET BEFORE NEW VIDEO
+    if (extractedFrame) {
+      URL.revokeObjectURL(extractedFrame);
+    }
+
     setExtractedFrame(null);
+    setVideoFile(null);
+    setVideoInfo(null);
+    setUploadProgress(0);
 
-    // simulate progress
-    let progress = 0;
-    const progressInterval = setInterval(() => {
-      progress += 5;
-      setUploadProgress(progress);
-      if (progress >= 100) clearInterval(progressInterval);
-    }, 80);
+    // ✅ Let React flush state first
+    setTimeout(async () => {
+      setVideoFile(file);
 
-    toast({
-      title: "Video uploaded",
-      description: `Duration: ${info.duration}s, Resolution: ${info.resolution}`,
-    });
+      const info = await getVideoInfo(file);
+      setVideoInfo(info);
+
+      // simulate progress
+      let progress = 0;
+      const progressInterval = setInterval(() => {
+        progress += 5;
+        setUploadProgress(progress);
+        if (progress >= 100) clearInterval(progressInterval);
+      }, 80);
+
+      toast({
+        title: "Video uploaded",
+        description: `Duration: ${info.duration}s, Resolution: ${info.resolution}`,
+      });
+    }, 50);
   };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -114,7 +126,6 @@ const Upload = () => {
 
     const file = e.dataTransfer.files[0];
     if (file) {
-      resetState();
       handleFileSelect(file);
     }
   }, []);
@@ -123,7 +134,6 @@ const Upload = () => {
     const file = e.target.files?.[0];
     if (file) {
       handleFileSelect(file);
-      extractFrame();
     }
 
     e.target.value = "";
@@ -137,25 +147,12 @@ const Upload = () => {
 
     if (profile.last_extraction) {
       const lastExtractionMs = new Date(profile.last_extraction).getTime();
-
-      const diffMs = now - lastExtractionMs;
-      const diffMinutes = diffMs / (1000 * 60);
+      const diffMinutes = (now - lastExtractionMs) / (1000 * 60);
 
       const RESET_AFTER_MINUTES = 1440;
 
       if (diffMinutes >= RESET_AFTER_MINUTES) {
         usageCount = 0;
-
-        const { data } = await supabase
-          .from("profiles")
-          .update({ usage_count: 0 })
-          .eq("id", user.id)
-          .select()
-          .single();
-
-        if (data) {
-          setProfile(data);
-        }
       }
     }
 
@@ -187,7 +184,6 @@ const Upload = () => {
       formData.append("video", videoFile);
 
       const response = await fetch(
-        // "https://floframe-be.vercel.app/api/extract-last-frame",
         "http://98.92.243.235:4000/api/extract-last-frame",
         { method: "POST", body: formData }
       );
@@ -210,11 +206,6 @@ const Upload = () => {
 
       if (!error && data) {
         setProfile(data);
-
-        toast({
-          title: "Frame extracted",
-          description: `Remaining: ${data.usage_limit - data.usage_count}`,
-        });
       }
     } catch (error: any) {
       toast({
@@ -329,8 +320,11 @@ const Upload = () => {
     }
   };
 
-  // helper to reset state
   const resetState = () => {
+    if (extractedFrame) {
+      URL.revokeObjectURL(extractedFrame);
+    }
+
     setExtractedFrame(null);
     setVideoFile(null);
     setVideoInfo(null);
@@ -338,20 +332,18 @@ const Upload = () => {
   };
 
   useEffect(() => {
-    if (
-      videoFile &&
-      uploadProgress === 100 &&
-      !extractedFrame &&
-      !isProcessing
-    ) {
-      extractFrame();
-    }
-  }, [uploadProgress, videoFile]);
+    if (!videoFile) return;
+    if (uploadProgress !== 100) return;
+    if (isProcessing) return;
+    if (extractedFrame) return;
+
+    extractFrame();
+  }, [uploadProgress, videoFile, extractedFrame, isProcessing]);
 
   useEffect(() => {
-    if (!profile || !user) return;
+    if (!profile || !user || !profile.last_extraction) return;
 
-    const checkAndResetLimit = async () => {
+    const interval = setInterval(async () => {
       const now = Date.now();
       const lastExtractionMs = new Date(profile.last_extraction).getTime();
       const diffMinutes = (now - lastExtractionMs) / (1000 * 60);
@@ -359,21 +351,24 @@ const Upload = () => {
       const RESET_AFTER_MINUTES = 1440;
 
       if (diffMinutes >= RESET_AFTER_MINUTES && profile.usage_count > 0) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("profiles")
-          .update({ usage_count: 0 })
+          .update({
+            usage_count: 0,
+          })
           .eq("id", user.id)
           .select()
           .single();
 
-        if (data) {
+        if (!error && data) {
           setProfile(data);
+          console.log("✅ Usage reset after 24 hours");
         }
       }
-    };
+    }, 10000); // check every 10 seconds
 
-    checkAndResetLimit();
-  }, [profile?.last_extraction]);
+    return () => clearInterval(interval);
+  }, [profile?.last_extraction, profile?.usage_count, user?.id]);
 
   return (
     <div className={darkMode ? "dark" : ""}>
@@ -464,7 +459,7 @@ const Upload = () => {
             </div>
 
             {/* Progress Bar a */}
-            {videoFile && uploadProgress !== 0 && (
+            {videoFile && uploadProgress !== 0 && !extractedFrame && (
               <div className="space-y-1">
                 <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
                   <div
@@ -507,12 +502,6 @@ const Upload = () => {
                     onClick={downloadFrame}
                     className="w-full h-16 text-xl font-bold bg-primary hover:bg-primary/90 rounded-2xl">
                     Save
-                  </Button>
-                ) : extractedFrame && isIOS ? (
-                  <Button
-                    onClick={resetState}
-                    className="w-full h-16 text-xl font-bold rounded-2xl border border-border">
-                    New video
                   </Button>
                 ) : null}
               </div>

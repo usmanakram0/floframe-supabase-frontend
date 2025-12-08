@@ -112,11 +112,10 @@ const Auth = () => {
   const signInWithGoogle = async () => {
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin,
-        skipBrowserRedirect: true,
+        redirectTo: window.location.origin, // or `${window.location.origin}/`
       },
     });
 
@@ -128,41 +127,11 @@ const Auth = () => {
         description: error.message,
         variant: "destructive",
       });
-      return;
     }
 
-    if (data?.url) {
-      const popup = window.open(
-        data.url,
-        "google-oauth",
-        "width=500,height=600"
-      );
-
-      const interval = setInterval(async () => {
-        const { data: sessionData } = await supabase.auth.getSession();
-
-        if (sessionData.session) {
-          clearInterval(interval);
-          popup?.close();
-
-          // Update or insert profile
-          const user = sessionData.session.user;
-          if (user?.email) {
-            await supabase.from("profiles").upsert(
-              {
-                id: user.id,
-                email: user.email,
-                first_name: user.user_metadata?.full_name?.split(" ")[0] || "", // or map firstName
-                last_name: user.user_metadata?.full_name?.split(" ")[1] || "",
-              },
-              { onConflict: "id" }
-            );
-          }
-
-          navigate("/", { replace: true });
-        }
-      }, 1000);
-    }
+    // ✅ NO window.open
+    // ✅ NO polling
+    // ✅ NO skipBrowserRedirect
   };
 
   return (
