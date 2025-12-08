@@ -7,7 +7,7 @@ export const Navigation = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="w-full px-6 py-4 flex items-center justify-between border-b border-border">
+    <nav className="w-full px-4 sm:px-6 py-4 flex items-center justify-between border-b border-border">
       <Link to="/" className="flex items-center gap-2 group">
         <div className="w-10 h-10 flex items-center justify-center transition-transform group-hover:scale-105">
           <img src={logo} alt="" />
@@ -15,10 +15,10 @@ export const Navigation = () => {
         <span className="text-xl font-bold text-foreground">FloFrame</span>
       </Link>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-3 sm:gap-6">
         <Link
           to="/"
-          className={`transition-colors ${
+          className={`transition-colors text-[15px] sm:text-[16px] ${
             isActive("/")
               ? "text-foreground"
               : "text-muted-foreground hover:text-foreground"
@@ -27,7 +27,7 @@ export const Navigation = () => {
         </Link>
         <Link
           to="/about"
-          className={`transition-colors ${
+          className={`transition-colors text-[15px] sm:text-[16px] ${
             isActive("/about")
               ? "text-foreground"
               : "text-muted-foreground hover:text-foreground"
@@ -36,7 +36,7 @@ export const Navigation = () => {
         </Link>
         <Link
           to="/settings"
-          className={`transition-colors ${
+          className={`transition-colors text-[15px] sm:text-[16px] ${
             isActive("/settings")
               ? "text-foreground"
               : "text-muted-foreground hover:text-foreground"
