@@ -412,7 +412,9 @@ const Upload = () => {
             )}
 
             <div
-              className="border-2 cursor-pointer hover:border-primary transition-all ease-in-out 1s border-border bg-card rounded-2xl p-4"
+              className={`border-2 cursor-pointer hover:border-primary transition-all ease-in-out 1s border-border bg-card rounded-2xl p-4 ${
+                isProcessing ? "cursor-not-allowed opacity-20" : ""
+              }`}
               onClick={() =>
                 document.getElementById("videoUploadInput")?.click()
               }>
@@ -426,6 +428,7 @@ const Upload = () => {
               accept="video/mp4,video/quicktime"
               className="hidden"
               onChange={handleFileInput}
+              disabled={isProcessing}
             />
 
             {/* Drag & Drop Area */}
