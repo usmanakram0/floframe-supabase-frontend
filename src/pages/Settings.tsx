@@ -102,8 +102,7 @@ const Settings = () => {
             <h1 className="text-3xl font-bold text-foreground">Settings</h1>
           </div>
 
-          {/* Subscription Card */}
-          <div className="bg-card rounded-2xl border border-border p-6 space-y-4 shadow-md">
+          {/* <div className="bg-card rounded-2xl border border-border p-6 space-y-4 shadow-md">
             <h3 className="text-lg font-semibold text-foreground">
               Subscription
             </h3>
@@ -115,7 +114,6 @@ const Settings = () => {
               </div>
             ) : subscription ? (
               <div className="space-y-4">
-                {/* Paid Users */}
                 {subscription.plan !== "free" && (
                   <>
                     <p className="text-sm text-muted-foreground">
@@ -144,7 +142,6 @@ const Settings = () => {
                   </>
                 )}
 
-                {/* Free Plan */}
                 {subscription.plan === "free" && (
                   <div className="space-y-2 mt-4">
                     <p className="text-sm text-muted-foreground">
@@ -170,7 +167,6 @@ const Settings = () => {
                   </div>
                 )}
 
-                {/* Paid Monthly */}
                 {subscription.plan === "paid" &&
                   subscription.billing_interval === "month" && (
                     <div className="pt-4 border-t divide-y divide-border">
@@ -187,7 +183,6 @@ const Settings = () => {
                     </div>
                   )}
 
-                {/* Paid Yearly */}
                 {subscription.plan === "paid" &&
                   subscription.billing_interval === "year" && (
                     <p className="text-sm text-muted-foreground mt-4">
@@ -219,12 +214,12 @@ const Settings = () => {
                 </div>
               </div>
             )}
-          </div>
+          </div> */}
 
           {/* Other Settings */}
           <div className="bg-card rounded-2xl border border-border divide-y divide-border">
             {/* Frame Rate */}
-            <div className="p-6 flex items-center justify-between">
+            {/* `<div className="p-6 flex items-center justify-between">
               <div className="space-y-1">
                 <h3 className="text-lg font-medium text-foreground">
                   Frame Rate
@@ -247,10 +242,10 @@ const Settings = () => {
                   <SelectItem value="120">120 FPS</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div>` */}
 
             {/* Quality */}
-            <div className="p-6 flex items-center justify-between">
+            {/* <div className="p-6 flex items-center justify-between">
               <div className="space-y-1">
                 <h3 className="text-lg font-medium text-foreground">Quality</h3>
                 <p className="text-sm text-muted-foreground">
@@ -262,7 +257,7 @@ const Settings = () => {
                 onCheckedChange={setQuality}
                 className="data-[state=checked]:bg-primary"
               />
-            </div>
+            </div> */}
 
             {/* Dark Mode */}
             <div className="p-6 flex items-center justify-between">
@@ -282,11 +277,11 @@ const Settings = () => {
             </div>
           </div>
 
-          <Button
+          {/* <Button
             onClick={handleSave}
             className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90">
             Save Changes
-          </Button>
+          </Button> */}
 
           {/* User Info */}
           {user && (
