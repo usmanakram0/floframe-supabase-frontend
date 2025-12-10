@@ -184,7 +184,7 @@ const Upload = () => {
       formData.append("video", videoFile);
 
       const response = await fetch(
-        "http://98.92.243.235:4000/api/extract-last-frame",
+        "https://floframe.app/api/extract-last-frame",
         { method: "POST", body: formData }
       );
 
