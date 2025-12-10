@@ -10,6 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabaseClient";
 import { useSubscribe } from "@/contexts/SubscribeContext";
+import { LikeFloFrame } from "@/components/LikeButton";
+import { FloFrameFeedback } from "@/components/FloFrameFeedback";
 
 const Upload = () => {
   const {
@@ -217,72 +219,7 @@ const Upload = () => {
       setIsProcessing(false);
     }
   };
-  // const downloadFrame = async () => {
-  //   if (!extractedFrame) return;
 
-  //   try {
-  //     const blob = await (await fetch(extractedFrame)).blob();
-  //     const fileName = `floframe-${Date.now()}.png`;
-
-  //     const ua = navigator.userAgent;
-  //     const isIOS = /iPad|iPhone|iPod/.test(ua);
-
-  //     if (isIOS) {
-  //       // iOS: try Web Share API first
-  //       const file = new File([blob], fileName, { type: "image/png" });
-  //       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-  //         try {
-  //           await navigator.share({
-  //             files: [file],
-  //             title: "FloFrame",
-  //             text: "Save this frame to Photos",
-  //           });
-  //           toast({
-  //             title: "Save to Photos",
-  //             description: "In the next screen, tap 'Save to Photos'.",
-  //           });
-  //         } catch {
-  //           // fallback: open image in new tab for long-press saving
-  //           const newTab = window.open(extractedFrame, "_blank");
-  //           if (!newTab)
-  //             throw new Error("Please allow pop-ups to save the image.");
-  //         }
-  //       } else {
-  //         // fallback for older iOS: open in new tab
-  //         const newTab = window.open(extractedFrame, "_blank");
-  //         if (!newTab)
-  //           throw new Error("Please allow pop-ups to save the image.");
-  //       }
-  //     } else {
-  //       // Android & Desktop: standard download
-  //       const link = document.createElement("a");
-  //       link.href = extractedFrame;
-  //       link.download = fileName;
-  //       document.body.appendChild(link);
-  //       link.click();
-  //       document.body.removeChild(link);
-  //     }
-
-  //     setExtractedFrame(null);
-  //     setVideoFile(null);
-  //     setVideoInfo(null);
-  //     setUploadProgress(0);
-  //   } catch (err: any) {
-  //     console.error(err);
-  //     toast({
-  //       title: "Download Failed",
-  //       description: err.message,
-  //       variant: "destructive",
-  //     });
-  //   }
-  // };
-
-  // const clearAll = () => {
-  //   setVideoFile(null);
-  //   setExtractedFrame(null);
-  //   setVideoInfo(null);
-  //   setUploadProgress(0);
-  // };
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const downloadFrame = async () => {
     if (!extractedFrame) return;
@@ -508,6 +445,13 @@ const Upload = () => {
                   </Button>
                 ) : null}
               </div>
+            )}
+
+            {extractedFrame && (
+              <>
+                <LikeFloFrame />
+                <FloFrameFeedback />
+              </>
             )}
           </div>
         </main>
