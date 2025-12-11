@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Upload as UploadIcon, Download, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -28,11 +28,34 @@ const Upload = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const { subscription, loading: loadingSub } = useSubscribe();
+  const hasTriggeredRef = useRef(false);
 
   const { toast } = useToast();
 
   const { user } = useAuth();
   const { profile, setProfile, loading: profileLoading } = useProfile(user?.id);
+
+  function isSameLocalDate(dateA: Date, dateB: Date) {
+    return (
+      dateA.getFullYear() === dateB.getFullYear() &&
+      dateA.getMonth() === dateB.getMonth() &&
+      dateA.getDate() === dateB.getDate()
+    );
+  }
+
+  function getNextLocalMidnight() {
+    const now = new Date();
+    const midnight = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1, // tomorrow
+      0,
+      0,
+      0,
+      0
+    );
+    return midnight;
+  }
 
   const validateFile = (file: File): boolean => {
     const validTypes = ["video/mp4", "video/quicktime"];
@@ -144,26 +167,26 @@ const Upload = () => {
   const extractFrame = async () => {
     if (isProcessing || !videoFile || !profile || !user) return;
 
-    const now = Date.now();
+    const now = new Date();
     let usageCount = profile.usage_count;
+    let shouldSetNewTimestamp = false;
 
-    if (profile.last_extraction) {
-      const lastExtractionMs = new Date(profile.last_extraction).getTime();
-      const diffMinutes = (now - lastExtractionMs) / (1000 * 60);
+    if (!profile.last_extraction) {
+      // First extraction ever
+      usageCount = 0;
+      shouldSetNewTimestamp = true;
+    } else {
+      const last = new Date(profile.last_extraction);
 
-      const RESET_AFTER_MINUTES = 1440;
-
-      if (diffMinutes >= RESET_AFTER_MINUTES) {
+      if (!isSameLocalDate(now, last)) {
+        // New day → reset usage
         usageCount = 0;
+        shouldSetNewTimestamp = true;
       }
     }
 
-    const lastExtractionDate = new Date(profile.last_extraction);
-    const nextResetDate = new Date(
-      lastExtractionDate.getTime() + 24 * 60 * 60 * 1000
-    );
-
-    const nextResetTimeLocal = nextResetDate.toLocaleTimeString([], {
+    const nextMidnight = getNextLocalMidnight();
+    const nextResetTimeLocal = nextMidnight.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
@@ -200,7 +223,9 @@ const Upload = () => {
         .from("profiles")
         .update({
           usage_count: usageCount + 1,
-          last_extraction: new Date().toISOString(),
+          ...(shouldSetNewTimestamp && {
+            last_extraction: new Date().toISOString(),
+          }),
         })
         .eq("id", user.id)
         .select()
@@ -273,7 +298,9 @@ const Upload = () => {
     if (uploadProgress !== 100) return;
     if (isProcessing) return;
     if (extractedFrame) return;
+    if (hasTriggeredRef.current) return;
 
+    hasTriggeredRef.current = true;
     extractFrame();
   }, [uploadProgress, videoFile, extractedFrame, isProcessing]);
 
@@ -281,17 +308,19 @@ const Upload = () => {
     if (!profile || !user || !profile.last_extraction) return;
 
     const interval = setInterval(async () => {
-      const now = Date.now();
-      const lastExtractionMs = new Date(profile.last_extraction).getTime();
-      const diffMinutes = (now - lastExtractionMs) / (1000 * 60);
+      const now = new Date();
+      const last = new Date(profile.last_extraction);
 
-      const RESET_AFTER_MINUTES = 1440;
+      const isNewDay = !isSameLocalDate(now, last);
 
-      if (diffMinutes >= RESET_AFTER_MINUTES && profile.usage_count > 0) {
+      if (isNewDay) {
         const { data, error } = await supabase
           .from("profiles")
           .update({
             usage_count: 0,
+            ...(profile.usage_count > 0 && {
+              last_extraction: now.toISOString(),
+            }),
           })
           .eq("id", user.id)
           .select()
@@ -299,13 +328,17 @@ const Upload = () => {
 
         if (!error && data) {
           setProfile(data);
-          console.log("✅ Usage reset after 24 hours");
+          console.log("🌙 Midnight reset completed");
         }
       }
-    }, 10000); // check every 10 seconds
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [profile?.last_extraction, profile?.usage_count, user?.id]);
+
+  useEffect(() => {
+    hasTriggeredRef.current = false;
+  }, [videoFile]);
 
   return (
     <div className={darkMode ? "dark" : ""}>
