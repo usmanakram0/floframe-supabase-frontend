@@ -18,7 +18,7 @@ import { SubscribeProvider } from "./contexts/SubscribeContext";
 import Dashboard from "./pages/DashboardPage";
 
 const queryClient = new QueryClient();
-
+// abc
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
