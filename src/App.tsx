@@ -15,6 +15,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import NewPasswordPage from "./pages/NewPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { SubscribeProvider } from "./contexts/SubscribeContext";
+import Dashboard from "./pages/DashboardPage";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,15 @@ const App = () => (
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
