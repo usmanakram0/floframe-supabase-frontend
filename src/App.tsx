@@ -30,45 +30,45 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <Routes>
-                  <Route path="/auth" element={<Auth />} />
+                  {/* <Route path="/auth" element={<Auth />} />
                   <Route
                     path="/reset-password"
                     element={<ResetPasswordPage />}
                   />
-                  <Route path="/new-password" element={<NewPasswordPage />} />
+                  <Route path="/new-password" element={<NewPasswordPage />} /> */}
                   <Route
                     path="/"
                     element={
-                      <ProtectedRoute>
-                        <Upload />
-                      </ProtectedRoute>
+                      // <ProtectedRoute>
+                      <Upload />
+                      // </ProtectedRoute>
                     }
                   />
 
                   <Route
                     path="/settings"
                     element={
-                      <ProtectedRoute>
-                        <Settings />
-                      </ProtectedRoute>
+                      // <ProtectedRoute>
+                      <Settings />
+                      // </ProtectedRoute>
                     }
                   />
                   <Route
                     path="/about"
                     element={
-                      <ProtectedRoute>
-                        <About />
-                      </ProtectedRoute>
+                      // <ProtectedRoute>
+                      <About />
+                      // </ProtectedRoute>
                     }
                   />
-                  <Route
+                  {/* <Route
                     path="/dashboard"
                     element={
                       <ProtectedRoute>
                         <Dashboard />
                       </ProtectedRoute>
                     }
-                  />
+                  /> */}
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>

@@ -284,7 +284,7 @@ const Settings = () => {
           </Button> */}
 
           {/* User Info */}
-          {user && (
+          {/* {user && (
             <div className="pt-6 border-t border-border space-y-4">
               <div className="flex items-center gap-4 p-4 bg-card rounded-xl">
                 <img
@@ -304,7 +304,7 @@ const Settings = () => {
             className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90">
             <LogOut className="w-4 h-4" />
             Logout
-          </Button>
+          </Button> */}
         </main>
       </div>
     </div>

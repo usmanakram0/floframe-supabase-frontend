@@ -126,14 +126,14 @@ export const Navigation = () => {
                 />
               </div>
             </div>
-            <div className="mt-4 w-full flex border-t pt-6">
+            {/* <div className="mt-4 w-full flex border-t pt-6">
               <Button
                 onClick={handleLogout}
                 className="border-t mx-4 mt-1 py-1 w-full h-12 text-lg rounded-[6px] font-semibold bg-primary hover:bg-primary/90">
                 <LogOut className="w-4 h-4" />
                 Logout
               </Button>
-            </div>
+            </div> */}
           </SheetContent>
         </Sheet>
       </div>
