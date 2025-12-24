@@ -63,11 +63,11 @@ export const Navigation = () => {
           Settings
         </Link>
 
-        {user?.email === isAdminEmail && (
-          <Link to="/dashboard" className={navItemClasses("/dashboard")}>
-            Dashboard
-          </Link>
-        )}
+        {/* {user?.email === isAdminEmail && ( */}
+        {/* <Link to="/dashboard" className={navItemClasses("/dashboard")}>
+          Dashboard
+        </Link> */}
+        {/* )} */}
       </div>
 
       <div className="sm:hidden">
@@ -101,11 +101,11 @@ export const Navigation = () => {
                 Settings
               </Link>
 
-              {user?.email === isAdminEmail && (
+              {/* {user?.email === isAdminEmail && (
                 <Link to="/dashboard" className={navItemClasses("/dashboard")}>
                   Dashboard
                 </Link>
-              )}
+              )} */}
             </div>
 
             <div className="mt-4 px-6 border-t pt-6">

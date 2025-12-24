@@ -16,69 +16,79 @@ import NewPasswordPage from "./pages/NewPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { SubscribeProvider } from "./contexts/SubscribeContext";
 import Dashboard from "./pages/DashboardPage";
+import AnalyticsDashboard from "./pages/DashboardPage";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
-// abc
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <SettingsProvider>
-        <UploadProvider>
-          <SubscribeProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  {/* <Route path="/auth" element={<Auth />} />
+// App.jsx ya Home.jsx
+
+const App = () => {
+  useEffect(() => {
+    fetch("https://floframe.app/api/track", {
+      method: "POST",
+    }).catch(() => {});
+  }, []);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <SettingsProvider>
+          <UploadProvider>
+            <SubscribeProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    {/* <Route path="/auth" element={<Auth />} />
                   <Route
                     path="/reset-password"
                     element={<ResetPasswordPage />}
                   />
                   <Route path="/new-password" element={<NewPasswordPage />} /> */}
-                  <Route
-                    path="/"
-                    element={
-                      // <ProtectedRoute>
-                      <Upload />
-                      // </ProtectedRoute>
-                    }
-                  />
+                    <Route
+                      path="/"
+                      element={
+                        // <ProtectedRoute>
+                        <Upload />
+                        // </ProtectedRoute>
+                      }
+                    />
 
-                  <Route
-                    path="/settings"
-                    element={
-                      // <ProtectedRoute>
-                      <Settings />
-                      // </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/about"
-                    element={
-                      // <ProtectedRoute>
-                      <About />
-                      // </ProtectedRoute>
-                    }
-                  />
-                  {/* <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    }
-                  /> */}
+                    <Route
+                      path="/settings"
+                      element={
+                        // <ProtectedRoute>
+                        <Settings />
+                        // </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/about"
+                      element={
+                        // <ProtectedRoute>
+                        <About />
+                        // </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin-dashboard"
+                      element={
+                        // <ProtectedRoute>
+                        <AnalyticsDashboard />
+                        // </ProtectedRoute>
+                      }
+                    />
 
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
-          </SubscribeProvider>
-        </UploadProvider>
-      </SettingsProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </SubscribeProvider>
+          </UploadProvider>
+        </SettingsProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
