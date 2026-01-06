@@ -1,3 +1,4 @@
+import { Footer } from "@/components/Footer";
 import { Navigation } from "@/components/Navigation";
 import { useSettings } from "@/contexts/SettingsContext";
 
@@ -8,8 +9,7 @@ const About = () => {
     <div className={darkMode ? "dark" : ""}>
       <div className="min-h-screen bg-background">
         <Navigation />
-
-        <main className="container mx-auto px-4 py-12 max-w-3xl">
+        <main className="mb-[83px] container mx-auto px-4 py-12 max-w-3xl">
           <div className="space-y-8">
             {/* Header */}
             <div className="space-y-4">
@@ -149,6 +149,7 @@ const About = () => {
             </div>
           </div>
         </main>
+        <Footer />
       </div>
     </div>
   );

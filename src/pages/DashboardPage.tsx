@@ -161,6 +161,8 @@ export default function AnalyticsDashboard() {
   const [analytics, setAnalytics] = useState({
     totalVisits: 0,
     todayVisits: 0,
+    totalExtracts: 0,
+    todayExtracts: 0,
   });
 
   useEffect(() => {
@@ -173,10 +175,13 @@ export default function AnalyticsDashboard() {
 
         const today = new Date().toISOString().slice(0, 10);
         const todayVisits = json.data.dailyVisits[today] || 0;
+        const todayExtracts = json.data.dailyExtracts[today] || 0; // Get today's extracts
 
         setAnalytics({
           totalVisits: json.data.totalVisits,
+          totalExtracts: json.data.totalExtracts, // Get total extracts
           todayVisits,
+          todayExtracts,
         });
       } catch (err) {
         toast({
@@ -235,6 +240,28 @@ export default function AnalyticsDashboard() {
                   </h2>
                   <p className="text-3xl font-bold mt-2 text-foreground">
                     {analytics.todayVisits}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Total Extracts
+                  </h2>
+                  <p className="text-3xl font-bold mt-2 text-foreground">
+                    {analytics.totalExtracts}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Extracts Today
+                  </h2>
+                  <p className="text-3xl font-bold mt-2 text-foreground">
+                    {analytics.todayExtracts}
                   </p>
                 </CardContent>
               </Card>
