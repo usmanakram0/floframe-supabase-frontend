@@ -509,6 +509,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useSubscribe } from "@/contexts/SubscribeContext";
 import { LikeFloFrame } from "@/components/LikeButton";
 import { FloFrameFeedback } from "@/components/FloFrameFeedback";
+import { Footer } from "@/components/Footer";
 
 const Upload = () => {
   const {
@@ -856,7 +857,7 @@ const Upload = () => {
       <div className="min-h-screen bg-background">
         <Navigation />
 
-        <main className="container mx-auto px-4 py-6 max-w-[600px]">
+        <main className="mb-[83px] container mx-auto px-4 py-6 max-w-[600px]">
           <div className="space-y-6">
             {/* Logo Header */}
             <div className="flex items-center justify-center gap-4 mb-8">
@@ -1011,6 +1012,8 @@ const Upload = () => {
             )} */}
           </div>
         </main>
+
+        <Footer />
       </div>
     </div>
   );

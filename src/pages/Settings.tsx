@@ -19,6 +19,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useUpload } from "@/contexts/UploadContext";
 import { useSubscribe } from "@/contexts/SubscribeContext";
+import { Footer } from "@/components/Footer";
 
 const Settings = () => {
   const {
@@ -93,7 +94,7 @@ const Settings = () => {
       <div className="min-h-screen bg-background">
         <Navigation />
 
-        <main className="container mx-auto px-4 py-12 max-w-2xl space-y-8">
+        <main className="mb-[83px]  container mx-auto px-4 py-12 max-w-2xl space-y-8">
           {/* Header */}
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-105">
@@ -306,6 +307,8 @@ const Settings = () => {
             Logout
           </Button> */}
         </main>
+
+        <Footer />
       </div>
     </div>
   );
