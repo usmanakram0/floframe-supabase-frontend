@@ -71,7 +71,7 @@ const App = () => {
                       }
                     />
                     <Route
-                      path="/admin-dashboard"
+                      path="/isAdminEmail1 "
                       element={
                         // <ProtectedRoute>
                         <AnalyticsDashboard />
