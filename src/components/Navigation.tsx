@@ -22,8 +22,6 @@ export const Navigation = () => {
   const { clearAll } = useUpload();
   const navigate = useNavigate();
   const isAdminEmail = import.meta.env.VITE_ADMIN_USER_EMAIL;
-  console.log("isAdminEmail1", user?.email);
-  console.log("isAdminEmail2", user?.email === isAdminEmail);
 
   const isActive = (path: string) => location.pathname === path;
 
