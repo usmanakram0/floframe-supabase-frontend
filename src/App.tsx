@@ -16,7 +16,7 @@ import NewPasswordPage from "./pages/NewPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { SubscribeProvider } from "./contexts/SubscribeContext";
 import Dashboard from "./pages/DashboardPage";
-import AnalyticsDashboard from "./pages/DashboardPage";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import { useEffect } from "react";
 import { apiUrl } from "@/lib/api";
 

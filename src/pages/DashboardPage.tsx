@@ -176,11 +176,11 @@ export default function AnalyticsDashboard() {
 
         const today = new Date().toISOString().slice(0, 10);
         const todayVisits = json.data.dailyVisits[today] || 0;
-        const todayExtracts = json.data.dailyExtracts[today] || 0; // Get today's extracts
+        const todayExtracts = json.data.dailyExtracts[today] || 0;
 
         setAnalytics({
           totalVisits: json.data.totalVisits,
-          totalExtracts: json.data.totalExtracts, // Get total extracts
+          totalExtracts: json.data.totalExtracts,
           todayVisits,
           todayExtracts,
         });
