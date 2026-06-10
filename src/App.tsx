@@ -18,13 +18,14 @@ import { SubscribeProvider } from "./contexts/SubscribeContext";
 import Dashboard from "./pages/DashboardPage";
 import AnalyticsDashboard from "./pages/DashboardPage";
 import { useEffect } from "react";
+import { apiUrl } from "@/lib/api";
 
 const queryClient = new QueryClient();
 // App.jsx ya Home.jsx
 
 const App = () => {
   useEffect(() => {
-    fetch("https://floframe.app/api/track", {
+    fetch(apiUrl("/api/track"), {
       method: "POST",
     }).catch(() => {});
   }, []);

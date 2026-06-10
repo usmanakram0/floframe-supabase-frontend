@@ -510,6 +510,7 @@ import { useSubscribe } from "@/contexts/SubscribeContext";
 import { LikeFloFrame } from "@/components/LikeButton";
 import { FloFrameFeedback } from "@/components/FloFrameFeedback";
 import { Footer } from "@/components/Footer";
+import { apiUrl } from "@/lib/api";
 
 const Upload = () => {
   const {
@@ -714,10 +715,10 @@ const Upload = () => {
       const formData = new FormData();
       formData.append("video", videoFile);
 
-      const response = await fetch(
-        "https://floframe.app/api/extract-last-frame",
-        { method: "POST", body: formData }
-      );
+      const response = await fetch(apiUrl("/api/extract-last-frame"), {
+        method: "POST",
+        body: formData,
+      });
 
       if (!response.ok) throw new Error("Extraction failed");
 

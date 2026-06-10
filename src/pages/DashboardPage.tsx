@@ -149,6 +149,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
+import { apiUrl } from "@/lib/api";
 
 export default function AnalyticsDashboard() {
   // const { user } = useAuth();
@@ -170,7 +171,7 @@ export default function AnalyticsDashboard() {
       // if (!user || user.email !== isAdminEmail) return;
 
       try {
-        const res = await fetch("https://floframe.app/api/analytics");
+        const res = await fetch(apiUrl("/api/analytics"));
         const json = await res.json();
 
         const today = new Date().toISOString().slice(0, 10);
