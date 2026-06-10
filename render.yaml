@@ -1,11 +1,11 @@
 services:
   - type: web
     name: floframe-supabase-frontend
-    runtime: static
+    runtime: node
     repo: https://github.com/usmanakram0/floframe-supabase-frontend
     branch: main
     buildCommand: npm ci && npm run build
-    staticPublishPath: dist
+    startCommand: npm start
     envVars:
       - key: VITE_API_BASE_URL
         value: https://flowframe-backend-bwgq.onrender.com
@@ -15,7 +15,3 @@ services:
         sync: false
       - key: VITE_ADMIN_USER_EMAIL
         value: jgonzalezlv@yahoo.com
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html

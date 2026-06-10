@@ -3,8 +3,6 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { copyFileSync, existsSync } from "fs";
-
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
@@ -21,16 +19,17 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     // Add plugin to copy _redirects file after build for production
     mode === "production" && {
-      name: "copy-redirects",
+      name: "copy-spa-fallbacks",
       closeBundle() {
-        // Copy _redirects to dist folder after build for SPA routing
         if (existsSync("_redirects")) {
           copyFileSync("_redirects", "dist/_redirects");
           console.log("✓ Copied _redirects to dist folder");
-        } else {
-          console.warn(
-            "⚠ _redirects file not found - SPA routing may not work",
-          );
+        }
+
+        const indexPath = "dist/index.html";
+        if (existsSync(indexPath)) {
+          copyFileSync(indexPath, "dist/404.html");
+          console.log("✓ Copied index.html to dist/404.html for SPA fallback");
         }
       },
     },
