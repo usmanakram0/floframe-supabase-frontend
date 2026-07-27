@@ -511,6 +511,7 @@ import { LikeFloFrame } from "@/components/LikeButton";
 import { FloFrameFeedback } from "@/components/FloFrameFeedback";
 import { Footer } from "@/components/Footer";
 import { apiUrl } from "@/lib/api";
+import { usePostHog } from "@posthog/react"; // PostHog: analytics hook
 
 const Upload = () => {
   const {
@@ -528,43 +529,25 @@ const Upload = () => {
   const [isDragging, setIsDragging] = useState(false);
   const { subscription, loading: loadingSub } = useSubscribe();
   const hasTriggeredRef = useRef(false);
+  const extractStartRef = useRef<number>(0); // PostHog: time the extraction
 
   const { toast } = useToast();
+  const posthog = usePostHog(); // PostHog: instance for capturing events
 
   const { user } = useAuth();
   // Comment out profile-related code since login is not required anymore
   // const { profile, setProfile, loading: profileLoading } = useProfile(user?.id);
-
-  // Comment out date checking functions since we don't need daily limits
-  /*
-  function isSameLocalDate(dateA: Date, dateB: Date) {
-    return (
-      dateA.getFullYear() === dateB.getFullYear() &&
-      dateA.getMonth() === dateB.getMonth() &&
-      dateA.getDate() === dateB.getDate()
-    );
-  }
-
-  function getNextLocalMidnight() {
-    const now = new Date();
-    const midnight = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() + 1, // tomorrow
-      0,
-      0,
-      0,
-      0
-    );
-    return midnight;
-  }
-  */
 
   const validateFile = (file: File): boolean => {
     const validTypes = ["video/mp4", "video/quicktime"];
     const maxSize = 200 * 1024 * 1024; // 200MB
 
     if (!validTypes.includes(file.type)) {
+      // PostHog: track rejected files so Jesus sees failed upload attempts
+      posthog?.capture("upload_rejected", {
+        reason: "invalid_type",
+        video_format: file.type,
+      });
       toast({
         title: "Invalid file type",
         description: "Please upload an MP4 or MOV file",
@@ -574,6 +557,10 @@ const Upload = () => {
     }
 
     if (file.size > maxSize) {
+      posthog?.capture("upload_rejected", {
+        reason: "too_large",
+        file_size_mb: +(file.size / (1024 * 1024)).toFixed(2),
+      });
       toast({
         title: "File too large",
         description: "Maximum file size is 200MB",
@@ -623,6 +610,14 @@ const Upload = () => {
       const info = await getVideoInfo(file);
       setVideoInfo(info);
 
+      // PostHog: a valid video was uploaded (feature usage + source metadata)
+      posthog?.capture("video_uploaded", {
+        video_format: file.type,
+        file_size_mb: +(file.size / (1024 * 1024)).toFixed(2),
+        duration_seconds: info.duration,
+        resolution: info.resolution,
+      });
+
       // simulate progress
       let progress = 0;
       const progressInterval = setInterval(() => {
@@ -671,49 +666,21 @@ const Upload = () => {
     // Remove user/profile check since everyone can use it
     if (isProcessing || !videoFile) return;
 
-    // Comment out all daily limit checking logic
-    /*
-    const now = new Date();
-    let usageCount = profile.usage_count;
-    let shouldSetNewTimestamp = false;
-
-    if (!profile.last_extraction) {
-      // First extraction ever
-      usageCount = 0;
-      shouldSetNewTimestamp = true;
-    } else {
-      const last = new Date(profile.last_extraction);
-
-      if (!isSameLocalDate(now, last)) {
-        // New day → reset usage
-        usageCount = 0;
-        shouldSetNewTimestamp = true;
-      }
-    }
-
-    const nextMidnight = getNextLocalMidnight();
-    const nextResetTimeLocal = nextMidnight.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-
-    // 2025-12-03 13:23:56.697+00
-    if (usageCount >= profile.usage_limit) {
-      toast({
-        title: "Limit Reached",
-        description: `You have used all free extractions for today. Come again tomorrow at ${nextResetTimeLocal}.`,
-        variant: "destructive",
-      });
-      return;
-    }
-    */
-
     setIsProcessing(true);
+    extractStartRef.current = Date.now(); // PostHog: start timer
+
+    // PostHog: extraction begins — top of the success funnel
+    posthog?.capture("extraction_started", {
+      video_format: videoFile.type,
+      file_size_mb: +(videoFile.size / (1024 * 1024)).toFixed(2),
+    });
 
     try {
       const formData = new FormData();
       formData.append("video", videoFile);
+      // PostHog: send our distinct_id so the backend's authoritative
+      // "frame_extracted" event attaches to this same person.
+      formData.append("distinct_id", posthog?.get_distinct_id() ?? "");
 
       const response = await fetch(apiUrl("/api/extract-last-frame"), {
         method: "POST",
@@ -726,25 +693,19 @@ const Upload = () => {
       const url = URL.createObjectURL(blob);
       setExtractedFrame(url);
 
-      // Comment out profile update since no login required
-      /*
-      const { data, error } = await supabase
-        .from("profiles")
-        .update({
-          usage_count: usageCount + 1,
-          ...(shouldSetNewTimestamp && {
-            last_extraction: new Date().toISOString(),
-          }),
-        })
-        .eq("id", user.id)
-        .select()
-        .single();
-
-      if (!error && data) {
-        setProfile(data);
-      }
-      */
+      // PostHog: client-confirmed success (backend also logs the authoritative
+      // "frame_extracted"; this one measures round-trip time for the user).
+      posthog?.capture("extraction_succeeded", {
+        video_format: videoFile.type,
+        round_trip_ms: Date.now() - extractStartRef.current,
+      });
     } catch (error: any) {
+      // PostHog: client-side failure (network / non-200). Distinct from the
+      // backend's "frame_extraction_failed" (ffmpeg-level failures).
+      posthog?.capture("extraction_failed", {
+        error_message: error?.message ?? "unknown",
+        round_trip_ms: Date.now() - extractStartRef.current,
+      });
       toast({
         title: "Extraction Failed",
         description: error.message,
@@ -758,6 +719,12 @@ const Upload = () => {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const downloadFrame = async () => {
     if (!extractedFrame) return;
+
+    // PostHog: user tapped Save (feature usage). Platform matters because iOS
+    // gets an instruction instead of an automatic download.
+    posthog?.capture("frame_downloaded", {
+      platform: isIOS ? "ios" : "web",
+    });
 
     try {
       const blob = await (await fetch(extractedFrame)).blob();
@@ -814,41 +781,6 @@ const Upload = () => {
     extractFrame();
   }, [uploadProgress, videoFile, extractedFrame, isProcessing]);
 
-  // Comment out the midnight reset effect since no daily limits
-  /*
-  useEffect(() => {
-    if (!profile || !user || !profile.last_extraction) return;
-
-    const interval = setInterval(async () => {
-      const now = new Date();
-      const last = new Date(profile.last_extraction);
-
-      const isNewDay = !isSameLocalDate(now, last);
-
-      if (isNewDay) {
-        const { data, error } = await supabase
-          .from("profiles")
-          .update({
-            usage_count: 0,
-            ...(profile.usage_count > 0 && {
-              last_extraction: now.toISOString(),
-            }),
-          })
-          .eq("id", user.id)
-          .select()
-          .single();
-
-        if (!error && data) {
-          setProfile(data);
-          console.log("🌙 Midnight reset completed");
-        }
-      }
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [profile?.last_extraction, profile?.usage_count, user?.id]);
-  */
-
   useEffect(() => {
     hasTriggeredRef.current = false;
   }, [videoFile]);
@@ -869,42 +801,8 @@ const Upload = () => {
               </div>
               <h1 className="text-2xl sm:text-4xl font-bold text-foreground">
                 FloFrame
-                {/* Comment out subscription display since no login required */}
-                {/* 
-                {subscription && subscription.plan === "paid" && (
-                  <p className="text-primary text-sm p-0 font-bold">Premium</p>
-                )}
-                */}
               </h1>
             </div>
-
-            {/* Comment out daily limit display since everyone has unlimited access */}
-            {/* 
-            {profile && profile.usage_limit <= 20 && (
-              <div className="text-center text-sm text-muted-foreground mb-2">
-                {profile.usage_count < profile.usage_limit ? (
-                  <>
-                    Remaining Extractions Today:{" "}
-                    <span className="text-primary font-semibold">
-                      {profile.usage_limit - profile.usage_count}
-                    </span>
-                    /{profile.usage_limit}
-                  </>
-                ) : (
-                  <span className="text-red-500 font-semibold">
-                    Daily limit reached
-                  </span>
-                )}
-              </div>
-            )}
-            */}
-
-            {/* Display message about free unlimited access */}
-            {/* <div className="text-center text-sm text-muted-foreground mb-2">
-              <span className="text-primary font-semibold">
-                Free unlimited extractions for everyone!
-              </span>
-            </div> */}
 
             <div
               className={`border-2 cursor-pointer hover:border-primary transition-all ease-in-out 1s border-border bg-card rounded-2xl p-4 ${
@@ -1004,13 +902,6 @@ const Upload = () => {
                 ) : null}
               </div>
             )}
-
-            {/* {extractedFrame && (
-              <>
-                <LikeFloFrame />
-                <FloFrameFeedback />
-              </>
-            )} */}
           </div>
         </main>
 
